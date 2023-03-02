@@ -1,0 +1,12 @@
+adding a system call:
+
+1) add to syscall.h
+2) add to syscall.c in both places
+3) add code to sysproc.c
+4) add to usys.S 
+5) add to user.h with actual parameter type
+
+adding user program:
+
+1) write .c file in xv6 directory
+2) edit makefile, add to uprogs and extras section. You can just ctrl-f zombie to see where

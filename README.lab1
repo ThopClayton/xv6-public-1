@@ -1,0 +1,22 @@
+Exercise 1:
+
+The nice value has been added to the process struct in proc.h, and allocproc (in proc.c) has been modified so that the nice value is init at -20.
+The new system call that will increment this value is called "nice".
+
+A user program called "test1.c" has been added. Simply type "test1" into the qemu terminal and it will execute, displaying a simple test that shows 
+the value is being updated, as well as the fact it has the required bounds (-20 to 19 inclusive).
+
+Exercise 2:
+
+The pseudo-random number generator was implemented using a simplified version of some code from wikipedia.org/wiki/xorshift
+It uses "5" as a seed via a global variable in sysproc.c. It seems to be evenly distributed, and whenever the qemu terminal is
+recompiled it follows the same pattern. A user program called "test2.c" was created, which prints the results of 15 calls to random
+in the terminal. Again, this can be accessed by typing "test2" into the qemu terminal.
+
+Difficulties:
+
+This lab was not that difficult. The biggest issue was implementing the first system call, simply because there are so many locations to edit.
+The only other true issue I had was getting my nice system call to take in the parameter, since hard coded values worked as expected, but my parameter seemed
+to be replaced by garbage. At first I was very confused, but after doing some reading I saw that using the argint function is how that is accomplished, 
+apparently it does some pointer math to get the parameters. Once that was complete, the system call ran as expected, and implementing the pseudo random
+number generator was a breeze. I created a file called "README.notes" to help streamline this process in the future for myself.

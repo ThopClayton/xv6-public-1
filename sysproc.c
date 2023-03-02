@@ -7,6 +7,8 @@
 #include "mmu.h"
 #include "proc.h"
 
+int randSeed = 5;
+
 int
 sys_fork(void)
 {
@@ -88,4 +90,30 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+// adjusts nice value
+int sys_nice(void) {
+  int inc;
+  if(argint(0, &inc) < 0) //assign param
+    return -1;
+  struct proc * p = myproc();
+
+  p->nice = p->nice + inc;
+  if (p->nice > 19) {
+    p->nice = 19;
+  } else if (p->nice < -20) {
+    p->nice = -20;
+  }
+
+  return p->nice;
+}
+
+// returns random int value
+// mostly stolen from wikipedia's xorshift article
+int sys_random(void) {
+  randSeed ^= randSeed >> 12;
+  randSeed ^= randSeed << 25;
+  randSeed ^= randSeed >> 27;
+  return randSeed; 
 }
