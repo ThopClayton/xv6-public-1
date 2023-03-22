@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int nice(int);
 int random(void);
+int evil(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

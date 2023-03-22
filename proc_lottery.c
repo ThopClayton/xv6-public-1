@@ -15,6 +15,7 @@ struct {
 static struct proc *initproc;
 
 int nextpid = 1;
+int lottoSeed = 5;
 extern void forkret(void);
 extern void trapret(void);
 
@@ -88,7 +89,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->nice = 0;
+  p->nice = -20;
+  p->bonusTickets = 0;
 
   release(&ptable.lock);
 
@@ -251,6 +253,7 @@ exit(void)
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
+  //increment parents tickets by bonus ticket value
   wakeup1(curproc->parent);
 
   // Pass abandoned children to init.
@@ -274,15 +277,14 @@ int
 wait(void)
 {
   struct proc *p;
-  int havekids, pid;
-  //int kids, bonus
+  int havekids, pid, kids, bonus;
   struct proc *curproc = myproc();
   
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
     havekids = 0;
-    //kids = 0;
+    kids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->parent != curproc)
         continue;
@@ -300,6 +302,8 @@ wait(void)
         p->state = UNUSED;
         release(&ptable.lock);
         return pid;
+      } else {
+        kids++;
       }
     }
 
@@ -309,9 +313,29 @@ wait(void)
       return -1;
     }
 
+    //distribute tickets to kids
+    bonus = p->nice / kids;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent == curproc)
+        p->bonusTickets = bonus;
+    }
+
+    //remove tickets from current process
+    curproc->nice = 0;
+
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
+}
+
+
+// returns random int value
+// mostly stolen from wikipedia's xorshift article
+int lotto_random(void) {
+  lottoSeed ^= lottoSeed >> 12;
+  lottoSeed ^= lottoSeed << 25;
+  lottoSeed ^= lottoSeed >> 27;
+  return lottoSeed; 
 }
 
 //PAGEBREAK: 42
@@ -336,19 +360,19 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
     total = 0;
-    winner = sys_random();
+    winner = lotto_random();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      total = total + (50 + p->nice); // only works when doing 1 + nice value
+      total = total + (20 - p->nice + p->bonusTickets); //!!!need to handle bonus tickets AND time tickets
     }
     winner = winner % total;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if ((50 + p->nice) >= winner){
+      if ((20 - p->nice + p->bonusTickets) > winner){
         break;
       } else {
-          winner = winner - (50 + p->nice);
+          winner = winner - (20 - p->nice + p->bonusTickets);
       }
     }
 
@@ -519,12 +543,10 @@ wakeup1(void *chan)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan) {
       p->state = RUNNABLE;
-    //if process's parent is thing being woken up, return bonus tickets from child to parent
-    /*if (chan == p) {
-      p->parent->nice = p->parent->nice + p->bonusTickets;
-      p->bonusTickets = 0;
-    }*/
-  }
+      //if process's parent is thing being woken up, return bonus tickets from child to parent
+      if (chan == p->parent)
+        p->parent->nice = p->parent->nice + p->bonusTickets;
+    }
 }
 
 // Wake up all processes sleeping on chan.

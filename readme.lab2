@@ -1,0 +1,28 @@
+Lottery Schedule:
+Implementing the lottery scheduler was fairly straight forward. It was quite surprising when we got 
+and extension for this lab. As far as implementing the scheduler went, there weren't any major issues,
+mostly small bugs that got squashed quickly. The real trouble came in setting up the 3 new test cases.
+This was mostly due to refamiliarizing myself with fork(). The nice system call form lab1 was modified 
+to allow nice values in the range -49 to 150 inclusive. Each process is assumed to have 50 tickets
+in proc.c, then the nice value is added to determine the actual number of tickets.
+
+A new system call was added for test 5, but that will be discussed in that section. Tests 1 and 2 are the same as in lab 1.
+Each test determines if a large number is prime in a very poor way, to insure a large amount of computation time is needed.
+
+Each test can be accessed by typing "TestX" into the qemu terminal, where X is 1-5 inclusive.
+
+Test 3:
+A process forks. The parent waits for the child process to complete before running. The parent holds 150 tickets, while the child gets only 1.
+This is to show the child progresses very slowly compared to the parent. Since the parent is holding onto the 150 tickets while waiting, there 
+are at least 151 tickets total, even if the parent will be removed from the CPU almost immediately if it wins.
+
+Test 4:
+Three threads run the same problem in parallel, each with a different priority. They finish in the order expected. Sometimes two print statements
+will overlap, but most of the time they do not.
+
+Test 5:
+This test was inspired by a bug I had when implementing the scheduler. I had miscounted my number of tickets by 1, and had created a 
+scenario where the lowest nice value would cause a process to hold zero tickets. While it was annoying at first, it showed me that
+my implementation of the lottery scheduler was working. So for this test I created the system call "evil()" that sets the nice value
+of the calling process to -50. That way the scheduler will compute the number of tickets for that process as 50-50=0, and it will
+never complete.

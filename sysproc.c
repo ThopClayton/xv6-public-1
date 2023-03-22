@@ -7,7 +7,7 @@
 #include "mmu.h"
 #include "proc.h"
 
-int randSeed = 5;
+int sys_randSeed = 5;
 
 int
 sys_fork(void)
@@ -99,21 +99,29 @@ int sys_nice(void) {
     return -1;
   struct proc * p = myproc();
 
-  p->nice = p->nice + inc;
-  if (p->nice > 19) {
-    p->nice = 19;
-  } else if (p->nice < -20) {
-    p->nice = -20;
+  
+  if (p->nice + inc > 100) {
+    p->nice = 100;
+  } else if (p->nice + inc < -49) {
+    p->nice = -49;
+  } else {
+    p->nice = p->nice + inc;
   }
 
+  return p->nice;
+}
+
+int sys_evil(void) {
+  struct proc * p = myproc();
+  p->nice = -50;
   return p->nice;
 }
 
 // returns random int value
 // mostly stolen from wikipedia's xorshift article
 int sys_random(void) {
-  randSeed ^= randSeed >> 12;
-  randSeed ^= randSeed << 25;
-  randSeed ^= randSeed >> 27;
-  return randSeed; 
+  sys_randSeed ^= sys_randSeed >> 12;
+  sys_randSeed ^= sys_randSeed << 25;
+  sys_randSeed ^= sys_randSeed >> 27;
+  return sys_randSeed; 
 }
